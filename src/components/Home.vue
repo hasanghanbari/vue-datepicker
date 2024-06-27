@@ -29,6 +29,7 @@ const toDate = ref('')
 const calendarType = ref('isJalali')
 const isRoundtrip = ref(false)
 const mountCount = 2
+const activeInput = ref('from')
 
 const todayDay = ref(moment().locale('fa').format('DD'))
 const todayMonth = ref(moment().locale('fa').format('MM'))
@@ -219,9 +220,26 @@ const setDays = () => {
 }
 
 const selectDate = (year: string, month: string, day: string) => {
+  console.log('select date', year)
   const date = year + '/' + month + '/' + day
-  console.log('select date', date)
-  fromDate.value = date
+  const [fromYear, fromMonth, fromDay] = fromDate.value.split('/').map(Number)
+
+  const selectDate = new Date(+year, +month - 1, +day)
+  const from = new Date(fromYear, +fromMonth - 1, +fromDay)
+
+  if (isRoundtrip) {
+    if (!fromDate || selectDate < from) {
+      fromDate.value = date
+    } else {
+      toDate.value = date
+    }
+  } else {
+    if (activeInput.value === 'from' || selectDate < from) {
+      fromDate.value = date
+    } else {
+      toDate.value = date
+    }
+  }
 }
 
 const arrowMonth = (type: string) => {
@@ -242,7 +260,7 @@ const arrowMonth = (type: string) => {
 }
 
 const changeCalendar = () => {
-  const mainDate = mainYear + '/' + mainMonth + '/15'
+  const mainDate = mainYear.value + '/' + mainMonth.value + '/15'
   console.log('mainDate', mainDate, moment.from(mainDate, 'fa', 'YYYY/MM/DD').format('YYYY'))
   if (calendarType.value === 'isJalali') {
     calendarType.value = 'isGregorian'
@@ -255,6 +273,15 @@ const changeCalendar = () => {
     todayYear.value = moment().format('YYYY')
     todayMonth.value = moment().format('MM')
     todayDay.value = moment().format('DD')
+
+    if (fromDate.value) {
+      fromDate.value = moment.from(fromDate.value, 'fa', 'YYYY/MM/DD').format('YYYY/MM/DD')
+    }
+    if (toDate.value) {
+      toDate.value = moment.from(toDate.value, 'fa', 'YYYY/MM/DD').format('YYYY/MM/DD')
+    }
+
+    setCalendar()
     return
   }
   calendarType.value = 'isJalali'
@@ -267,13 +294,22 @@ const changeCalendar = () => {
   todayYear.value = moment().locale('fa').format('YYYY')
   todayMonth.value = moment().locale('fa').format('MM')
   todayDay.value = moment().locale('fa').format('DD')
+
+  if (fromDate.value) {
+    fromDate.value = moment(fromDate.value).locale('fa').format('YYYY/MM/DD')
+  }
+  if (toDate.value) {
+    toDate.value = moment(toDate.value).locale('fa').format('YYYY/MM/DD')
+  }
+  setCalendar()
 }
 
 const goToToday = () => {
-  const mainDate = todayYear + '/' + todayMonth + '/' + todayDay
+  const mainDate = todayYear.value + '/' + todayMonth.value + '/' + todayDay.value
 
   mainYear.value = moment(mainDate).format('YYYY')
   mainMonth.value = moment(mainDate).format('MM')
+  setCalendar()
 }
 const setCalendar = () => {
   setMonths()
@@ -290,11 +326,15 @@ setCalendar()
 <template>
   <h1>vue Datepicker</h1>
   <div class="date-picker">
+    <div class="form-check form-check-reverse">
+      <input class="form-check-input" type="checkbox" v-model="isRoundtrip" id="flexCheckChecked" />
+      <label class="form-check-label" for="flexCheckChecked"> is Roundtrip </label>
+    </div>
     <div class="inputs">
       <div class="from-date">
         <label htmlFor="exampleDataList" class="form-label">
-          {{ isRoundtrip ? 'از' : '' }}
-          تاریخ:
+          {{ isRoundtrip ? 'from' : '' }}
+          date:
         </label>
         <input
           class="form-control"
@@ -306,7 +346,7 @@ setCalendar()
         />
       </div>
       <div class="to-date" v-if="isRoundtrip">
-        <label htmlFor="exampleDataList" class="form-label"> تا تاریخ: </label>
+        <label htmlFor="exampleDataList" class="form-label">to date: </label>
         <input
           class="form-control"
           list="datalistOptions"
@@ -320,10 +360,10 @@ setCalendar()
       <div :class="'dropdown-menu p-4 text-body-secondary ' + (showDropdown ? 'show' : '')">
         <div class="top-action"></div>
         <div class="arrow">
-          <div class="arrow-action" @click="arrowMonth('right')">
+          <div class="arrow-action" @click="arrowMonth('left')">
             {{ '<' }}
           </div>
-          <div class="arrow-action" @click="arrowMonth('left')">
+          <div class="arrow-action" @click="arrowMonth('right')">
             {{ '>' }}
           </div>
         </div>
@@ -337,7 +377,7 @@ setCalendar()
             :todayDay="todayDay"
             :fromDate="fromDate"
             :toDate="toDate"
-            :selectDate="selectDate"
+            @selectDate="selectDate"
           />
         </div>
         <div class="bottom-action d-flex justify-content-between">

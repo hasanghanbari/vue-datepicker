@@ -12,10 +12,10 @@
   color: #888;
 }
 
-body {
+/* body {
   text-align: right;
   direction: rtl;
-}
+} */
 .inputs {
   display: grid;
   grid-template-columns: 50% 50%;

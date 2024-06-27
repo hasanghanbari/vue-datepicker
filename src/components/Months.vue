@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   month: any
   calendarType: string
   todayYear: string
@@ -7,9 +7,43 @@ defineProps<{
   todayDay: string
   fromDate: string
   toDate: string
-  selectDate(year: string, month: string, day: string): void
 }>()
+
 const checkHighlight = (date: string) => {
+  if (props.fromDate === '' || props.toDate === '') {
+    return false
+  }
+
+  const [curYear, curMonth, curDay] = date.split('/').map(Number)
+  const [fromYear, fromMonth, fromDay] = props.fromDate.split('/').map(Number)
+  const [toYear, toMonth, toDay] = props.toDate.split('/').map(Number)
+
+  if (
+    curYear >= fromYear &&
+    curYear <= toYear &&
+    ((fromYear !== toYear &&
+      ((curMonth === fromMonth && curDay >= fromDay) ||
+        (curMonth === toMonth && curDay <= toDay) ||
+        (curMonth !== fromMonth &&
+          curMonth !== toMonth &&
+          (curMonth > fromMonth || curMonth < toMonth)))) ||
+      (fromYear === toYear &&
+        fromMonth !== toMonth &&
+        ((curMonth === fromMonth && curDay >= fromDay) ||
+          (curMonth === toMonth && curDay <= toDay) ||
+          (curMonth !== fromMonth &&
+            curMonth !== toMonth &&
+            curMonth > fromMonth &&
+            curMonth < toMonth))) ||
+      (curMonth === fromMonth &&
+        curMonth === toMonth &&
+        fromYear === toYear &&
+        fromMonth === toMonth &&
+        curDay > fromDay &&
+        curDay < toDay))
+  ) {
+    return true
+  }
   return false
 }
 const checkPassed = (date: string) => {
@@ -31,10 +65,11 @@ const checkPassed = (date: string) => {
       <span class="calendar-weekday"> {{ calendarType === 'isJalali' ? 'چ' : 'w' }} </span>
       <span class="calendar-weekday"> {{ calendarType === 'isJalali' ? 'پ' : 't' }} </span>
       <span class="calendar-weekday"> {{ calendarType === 'isJalali' ? 'ج' : 'f' }} </span>
+      <span v-for="emptyIndex in +month.days[0].dayOfWeek" class="" :key="'e' + emptyIndex"></span>
       <span
         v-for="(day, dayIndex) in month.days"
         :class="
-          'calendar-cell' +
+          'calendar-cell ' +
           (+todayYear === month.year,
           +todayMonth === +month.value && +todayDay === +day.value ? 'is_today ' : '') +
           (day.holiday ? 'is_holiday ' : '') +
@@ -46,9 +81,9 @@ const checkPassed = (date: string) => {
           (checkPassed(month.year + '/' + month.value + '/' + day.value) ? 'is_passed ' : '')
         "
         :key="dayIndex"
-        @Click="
+        @click="
           !checkPassed(month.year + '/' + month.value + '/' + day.value) &&
-            selectDate(month.year, month.value, day.value)
+            $emit('selectDate', month.year, month.value, day.value)
         "
       >
         {{ day.id }}
