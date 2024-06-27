@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import '@/assets/datepicker.css'
 import moment from 'jalali-moment'
 import { ref } from 'vue'
 
@@ -7,17 +8,34 @@ import Months from './Months.vue'
 defineProps<{
   msg: string
 }>()
+interface DaysIn {
+  id: number
+  value: string
+  price: string | null
+  state: string
+  holiday: boolean
+  dayOfWeek: number
+}
+interface datePickerIn {
+  id: number
+  value: string
+  title: string
+  year: number
+  days: DaysIn[]
+}
+
 const fromDate = ref('')
 const toDate = ref('')
 const calendarType = ref('isJalali')
 const isRoundtrip = ref(false)
+const mountCount = 2
 
 const todayDay = ref(moment().locale('fa').format('DD'))
 const todayMonth = ref(moment().locale('fa').format('MM'))
 const todayYear = ref(moment().locale('fa').format('YYYY'))
 
-const mainYear = ref(todayYear)
-const mainMonth = ref(todayMonth)
+const mainYear = ref(todayYear.value)
+const mainMonth = ref(todayMonth.value)
 
 const monthElement = ref([])
 const emptyDayElement = ref([])
@@ -148,39 +166,36 @@ const gregorianMonths = [
   }
 ]
 
-const datepicker = ref({
-  monthCount: 2,
-  activeMonth: 2,
-  months: []
-})
+const datepicker = ref<datePickerIn[]>([])
 
 const setMonths = () => {
-  let dateMonth = +mainMonth
-  let dateYear = +mainYear
-  datepicker.months.length = 0
-  for (let index = 0; index < datepicker.monthCount; index++) {
+  let dateMonth = +mainMonth.value
+  let dateYear = +mainYear.value
+
+  datepicker.value.length = 0
+  for (let index = 0; index < mountCount; index++) {
     let month = jalaliMonths.find((x) => x.id == dateMonth)
     if (calendarType.value === 'isGregorian') {
       month = gregorianMonths.find((x) => x.id == dateMonth)
     }
 
-    console.log('month', month, dateMonth)
-    datepicker.months.push({
-      id: month.id,
-      value: month.value,
-      title: month.title,
-      year: dateYear,
-      days: []
-    })
+    if (month) {
+      datepicker.value.push({
+        id: month.id,
+        value: month.value,
+        title: month.title,
+        year: dateYear,
+        days: []
+      })
+    }
 
     dateYear = dateMonth === 12 ? dateYear + 1 : dateYear
     dateMonth = dateMonth === 12 ? 1 : dateMonth + 1
   }
-  console.log('datepicker', datepicker)
 }
 
 const setDays = () => {
-  datepicker.value.months.forEach((month) => {
+  datepicker.value.forEach((month) => {
     month.days.length = 0
     const startMonth = moment(month.year + '/' + month.id + '/01', 'jYYYY/jM/jD')
     const dayCount = startMonth.jDaysInMonth()
@@ -188,7 +203,7 @@ const setDays = () => {
       const date = moment(month.year + '/' + month.id + '/' + (day + 1), 'jYYYY/jM/jD')
       const dayOfWeek = (date.day() + 1) % 7
       const holiday = dayOfWeek === 6 ? true : false
-      // console.log("date2", date.jDaysInMonth());
+
       if (date.isValid()) {
         month.days.push({
           id: day + 1,
@@ -210,7 +225,7 @@ const selectDate = (year: string, month: string, day: string) => {
 }
 
 const arrowMonth = (type: string) => {
-  const date = mainYear + '/' + mainMonth + '/01'
+  const date = mainYear.value + '/' + mainMonth.value + '/01'
 
   let newYear = moment(date).add(1, 'month').format('YYYY')
   let newMonth = moment(date).add(1, 'month').format('MM')
@@ -222,6 +237,8 @@ const arrowMonth = (type: string) => {
 
   mainYear.value = newYear
   mainMonth.value = newMonth
+
+  setCalendar()
 }
 
 const changeCalendar = () => {
@@ -258,10 +275,20 @@ const goToToday = () => {
   mainYear.value = moment(mainDate).format('YYYY')
   mainMonth.value = moment(mainDate).format('MM')
 }
+const setCalendar = () => {
+  setMonths()
+
+  /**
+   * set days on months
+   */
+  setDays()
+}
+
+setCalendar()
 </script>
 
 <template>
-  <h1>react Datepicker</h1>
+  <h1>vue Datepicker</h1>
   <div class="date-picker">
     <div class="inputs">
       <div class="from-date">
@@ -301,7 +328,17 @@ const goToToday = () => {
           </div>
         </div>
         <div :class="'dates ' + calendarType">
-          <Months />
+          <Months
+            v-for="month in datepicker"
+            :month="month"
+            :calendarType="calendarType"
+            :todayYear="todayYear"
+            :todayMonth="todayMonth"
+            :todayDay="todayDay"
+            :fromDate="fromDate"
+            :toDate="toDate"
+            :selectDate="selectDate"
+          />
         </div>
         <div class="bottom-action d-flex justify-content-between">
           <button class="btn btn-link" @click="goToToday()">برو امروز</button>
