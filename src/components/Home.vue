@@ -38,9 +38,6 @@ const todayYear = ref(moment().locale('fa').format('YYYY'))
 const mainYear = ref(todayYear.value)
 const mainMonth = ref(todayMonth.value)
 
-const monthElement = ref([])
-const emptyDayElement = ref([])
-
 const showDropdown = ref(false)
 const jalaliMonths = [
   {
@@ -220,25 +217,26 @@ const setDays = () => {
 }
 
 const selectDate = (year: string, month: string, day: string) => {
-  console.log('select date', year)
   const date = year + '/' + month + '/' + day
+
+  if (fromDate.value && toDate.value) {
+    fromDate.value = date
+    toDate.value = ''
+    return
+  }
   const [fromYear, fromMonth, fromDay] = fromDate.value.split('/').map(Number)
 
-  const selectDate = new Date(+year, +month - 1, +day)
+  const selectedDate = new Date(+year, +month - 1, +day)
   const from = new Date(fromYear, +fromMonth - 1, +fromDay)
 
-  if (isRoundtrip) {
-    if (!fromDate || selectDate < from) {
+  if (isRoundtrip.value) {
+    if (!fromDate.value || selectedDate < from) {
       fromDate.value = date
     } else {
       toDate.value = date
     }
   } else {
-    if (activeInput.value === 'from' || selectDate < from) {
-      fromDate.value = date
-    } else {
-      toDate.value = date
-    }
+    fromDate.value = date
   }
 }
 
@@ -261,7 +259,6 @@ const arrowMonth = (type: string) => {
 
 const changeCalendar = () => {
   const mainDate = mainYear.value + '/' + mainMonth.value + '/15'
-  console.log('mainDate', mainDate, moment.from(mainDate, 'fa', 'YYYY/MM/DD').format('YYYY'))
   if (calendarType.value === 'isJalali') {
     calendarType.value = 'isGregorian'
 
@@ -342,7 +339,7 @@ setCalendar()
           id="exampleDataList"
           placeholder=""
           :value="fromDate"
-          @click="showDropdown = true"
+          @click="(showDropdown = true), (activeInput = 'from')"
         />
       </div>
       <div class="to-date" v-if="isRoundtrip">
@@ -353,6 +350,7 @@ setCalendar()
           id="exampleDataList"
           placeholder=""
           :value="toDate"
+          @click="activeInput = 'to'"
         />
       </div>
     </div>

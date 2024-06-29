@@ -79,16 +79,16 @@
   background-color: #888;
 }
 .calendar-grid .calendar-cell.is_highlight {
-  background-color: rgba(28, 175, 119, 0.247);
+  background-color: rgba(28, 124, 175, 0.247);
 }
 .calendar-grid .calendar-cell.is_selected {
-  background-color: #08c27b;
+  background-color: #0843c2;
   color: #fff;
   font-weight: 600;
   font-size: 18px;
 }
 .calendar-grid .calendar-cell.is_selected:hover {
-  background-color: #09a86b;
+  background-color: #0843c2;
 }
 .calendar-grid .calendar-cell:active {
   background-color: #ccc;
